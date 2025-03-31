@@ -1,0 +1,106 @@
+'常量声明
+Const A = 0.1739274226
+Const B = 0.3260725774
+Const K = 0.0694318442
+Const L = 0.3300094782
+'**************************************************************************************************************
+'*****************************用Gauss-Legendre求积公式计算线元坐标(根据桩号和偏距算坐标）**********************
+'**************************************************************************************************************
+'根据测量空间yshf的帖子改编
+'已知量注释
+'SP_Northing——起点北坐标
+'SP_Easting——起点东坐标
+'SP_Chainage As Double——起点桩号
+'SP_TangentAzimuth——起点切线方位角,如190度33分56.44秒按190.335644输入
+'Length——线元长度
+'SP_Radius——起点半径
+'EP_Radius——终点半径
+'Direction——线元偏向，左输入-1，右为1
+'Chainge——求算点桩号
+'Offset——求算点偏距
+'GetValue——返回值，返回N坐标输入x,返回E坐标随意输入
+'Skew_angle——斜交角(右角)缺省值为正交90，当为正交时可不输入任何值，为斜交时输入右交角值，格式与切线方位角同
+Public Function CO2NE(SP_Northing As Double, SP_Easting As Double, SP_Chainage As Double, SP_TangentAzimuth As Double, Length As Double, SP_Radius As Double, EP_Radius As Double, Direction As Integer, Chainge As Double, Offset As Double, GetValue As String, Optional Skew_angle As Double) As Double
+Dim c As Double, d As Double, w As Double, f As Double, m As Double, x As Double, n As Double
+Dim az As Double,y as double
+'斜交角缺省值设置
+If IsMissing(Skew_angle) Then
+Skew_angle = worksheetfunction.Pi() / 2
+Else
+Skew_angle = WorksheetFunction.Radians(Int(Skew_angle) + (Int(Skew_angle * 100) - Int(Skew_angle) * 100) / 60 + (Skew_angle - Int(Skew_angle * 100) / 100) / 0.36)
+End If
+'切线方位角化为弧度
+az = WorksheetFunction.Radians(Int(SP_TangentAzimuth) + (Int(SP_TangentAzimuth * 100) - Int(SP_TangentAzimuth) * 100) / 60 + (SP_TangentAzimuth - Int(SP_TangentAzimuth * 100) / 100) / 0.36)
+'计算起点曲率
+c = 1 / SP_Radius
+'计算曲率变化率
+d = (SP_Radius - EP_Radius) / 2 / Length / SP_Radius / EP_Radius
+'计算桩号差
+w = Abs(Chainge - SP_Chainage)
+'计算桩坐标
+f = 1 - L:
+m = 1 - K
+x = SP_Northing + w * (A * Cos(az + Direction * K * w * (c + K * w * d)) + B * Cos(az + Direction * L * w * (c + L * w * d)) + B * Cos(az + Direction * f * w * (c + f * w * d)) + A * Cos(az + Direction * m * w * (c + m * w * d)))
+y = SP_Easting + w * (A * Sin(az + Direction * K * w * (c + K * w * d)) + B * Sin(az + Direction * L * w * (c + L * w * d)) + B * Sin(az + Direction * f * w * (c + f * w * d)) + A * Sin(az + Direction * m * w * (c + m * w * d)))
+'计算法线方位角
+n = az + Direction * w * (c + w * d) + Skew_angle
+'计算边桩坐标
+x = x + Offset * Cos(n): y = y + Offset * Sin(n)
+'数值输出
+If GetValue = "x" Or GetValue = "X" Then
+CO2NE = x
+Else
+CO2NE = y
+End If
+End Function
+'**************************************************************************************************************
+'*************************用Gauss-Legendre求积公式计算线元里程和偏距(根据坐标算桩号和偏距）********************
+'**************************************************************************************************************
+'根据测量空间yshf的帖子改编
+'已知量注释
+'SP_Northing——起点北坐标
+'SP_Easting——起点东坐标
+'SP_Chainage As Double——起点桩号
+'SP_TangentAzimuth——起点切线方位角,如190度33分56.44秒按190.335644输入
+'Length——线元长度
+'SP_Radius——起点半径
+'EP_Radius——终点半径
+'Direction——线元偏向，左输入-1，右为1
+'PointNorthing——已知点N坐标
+'PointEasting——已知点E坐标
+'GetValue——返回值，返回N坐标输入x,返回E坐标随意输入
+Public Function NE2CO(SP_Northing As Double, SP_Easting As Double, SP_Chainage As Double, SP_TangentAzimuth As Double, Length As Double, SP_Radius As Double, EP_Radius As Double, Direction As Integer, PointNorthing As Double, PointEasting As Double, GetValue As String) As Double
+Dim az As Double, c As Double, d As Double, t As Double, w As Double, z As Double, f As Double, m As Double
+Dim x As Double, y As Double, n As Double, ll As Double
+'切线方位角化为弧度
+az = WorksheetFunction.Radians(Int(SP_TangentAzimuth) + (Int(SP_TangentAzimuth * 100) - Int(SP_TangentAzimuth) * 100) / 60 + (SP_TangentAzimuth - Int(SP_TangentAzimuth * 100) / 100) / 0.36)
+'计算起点曲率
+c = 1 / SP_Radius
+'计算曲率变化率
+d = (SP_Radius - EP_Radius) / 2 / Length / SP_Radius / EP_Radius
+'计算法线方位角（左角）
+t = az - WorksheetFunction.Pi() / 2
+'计算近似桩号
+w = Abs((PointEasting - SP_Easting) * Cos(t) - (PointNorthing - SP_Northing) * Sin(t))
+z = 0
+Lbl0:
+'计算近似桩号的中桩坐标
+f = 1 - L
+m = 1 - K
+x = SP_Northing + w * (A * Cos(az + Direction * K * w * (c + K * w * d)) + B * Cos(az + Direction * L * w * (c + L * w * d)) + B * Cos(az + Direction * f * w * (c + f * w * d)) + A * Cos(az + Direction * m * w * (c + m * w * d)))
+y = SP_Easting + w * (A * Sin(az + Direction * K * w * (c + K * w * d)) + B * Sin(az + Direction * L * w * (c + L * w * d)) + B * Sin(az + Direction * f * w * (c + f * w * d)) + A * Sin(az + Direction * m * w * (c + m * w * d)))
+'计算近似桩号的切线方位角
+n = az + Direction * w * (c + w * d)
+'计算桩号趋近值
+ll = t + Direction * w * (c + w * d)
+z = (PointEasting - y) * Cos(ll) - (PointNorthing - x) * Sin(ll)
+'判断切线方位角限差，如果超限则继续迭代，否则终止迭代并计算桩号差
+If Abs(z) < 0.000001 Then GoTo Lbl1 Else w = w + z: GoTo Lbl0
+Lbl1:
+'数值结果输出
+If GetValue = "C" Or GetValue = "c" Then
+NE2CO = SP_Chainage + w
+Else
+NE2CO = (PointEasting - y) / Sin(n + WorksheetFunction.Pi() / 2)
+End If
+End Function
