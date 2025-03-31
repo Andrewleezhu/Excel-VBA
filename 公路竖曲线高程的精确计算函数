@@ -1,0 +1,20 @@
+'高等级道路竖曲线的精确计算修正错误版
+'原来没有考虑曲线的凹凸等情况，现已修正
+'i1和i2按%为单位输入
+'数学模型参看《测绘通报》1999年第1期《高等级道路竖曲线的精确计算方法》作者：孙银聪
+
+Public Function FineVitcalCurveCalc(VPI_Station As Double, i1 As Double, i2 As Double, VPI_Elevation As Double, radius As Double, chainage As Double) As Double
+Dim Angle1 As Double, Angle2 As Double, Omiga As Double, Tangent As Double, _
+d1 As Double, da As Double, H As Double, d As Double, DeltaH As Double, sn As Double
+Angle1 = Atn(i1)
+Angle2 = Atn(i2)
+Omiga = Angle1 - Angle2
+If i1 > 0 And i2 > 0 And i1 < i2 Then sn = -1 Else If i1 < 0 And i2 < 0 And i1 > i2 Then sn = -1 Else sn = 1
+Tangent = radius * Tan(Abs(Omiga) / 2)
+d1 = Tangent * Cos(Abs(Angle1))
+da = radius * Sin(Abs(Angle1))
+d = chainage - (VPI_Station - d1)
+H = Sqr(radius * radius - (d - sn * da) * (d - sn * da))
+DeltaH = Sqr(radius * radius - da * da) - Sgn(Omiga) * VPI_Elevation + Sgn(Omiga) * d1 * i1
+If chainage < VPI_Station - d1 Then FineVitcalCurveCalc = VPI_Elevation + (chainage - VPI_Station) * i1 Else FineVitcalCurveCalc = Sgn(Omiga) * (H - DeltaH)
+End Function
