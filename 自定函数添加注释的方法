@@ -1,0 +1,10 @@
+首先将宏安全性设为低，再重新打开Excel
+在模块中加入自定义函数：
+Public Function Divide(N1 As Double, N2 As Double) As Variant
+     If N2 = 0 Then Divide = "N2 Input error" Else Divide = N1 / N2
+End Function
+在Thisworkbook里面加入Open事件：
+Private Sub Workbook_Open()
+    Application.MacroOptions Macro:="Divide", Description:="除法运算", Category:="新加函数"
+End Sub
+Ok！保存并关闭该文件，重新打开并在里面点公式看看。
